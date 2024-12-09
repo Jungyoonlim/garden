@@ -1,4 +1,5 @@
 use wasm_bindgen::prelude::*;
+use std::fmt;
 
 #[wasm_bindgen]
 #[repr(u8)]
@@ -50,11 +51,68 @@ impl Universe {
                     // dies, as if caused by underpopulation
                     (Cell::Alive, x) if x < 2 => Cell::Dead,
                     // Rule 2: Any live cell with two or three live neighbors
-                    (Cell::Alive, 2) | (Cell::Alive, 3) => 
-                }
+                    (Cell::Alive, 2) | (Cell::Alive, 3) => Cell::Alive,
+                    // Rule 3: Any live cell with more than 3 live 
+                    // neighbors dies, as if by overpopulation 
+                    (Cell::Alive, x) if x > 3 => Cell::Dead, 
+                    // Rule 4: Any dead cell with exactly 3 live neighbors 
+                    (Cell:: Dead, 3) => Cell::Alive,
+                    // otherwise
+                    (otherwise, _) => otherwise, 
+                };
+                next[idx] = next_cell; 
             }
+        }
+        self.cells = next; 
+    }
+
+    pub fn new() -> Universe {
+        let width = 64;
+        let height = 64;
+
+        let cells = (0..width * height)
+            .map(|i| {
+                if i % 2 == 0 || i % 7 == 0 {
+                    Cell::Alive
+                } else {
+                    Cell::Dead
+                }
+            })
+            .collect();
+
+        Universe {
+            width,
+            height,
+            cells,
         }
     }
 
+    pub fn render(&self) -> String {
+        self.to_string()
+    }
 
+    pub fn width(&self) -> u32 {
+        self.width
+    }
+
+    pub fn height(&self) -> u32 {
+        self.height
+    }
+
+    pub fn cells(&self) -> *const Cell {
+        self.cells.as_ptr()
+    }
+}
+
+impl fmt::Display for Universe {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        for line in self.cells.as_slice().chunks(self.width as usize) {
+            for &cell in line {
+                let symbol = if cell == Cell::Dead { '◻' } else { '◼' };
+                write!(f, "{}", symbol)?;
+            }
+            write!(f, "\n")?;
+        }
+        Ok(())
+    }
 }
